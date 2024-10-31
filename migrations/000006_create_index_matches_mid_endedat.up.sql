@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_matches_message_id_ended_at ON matches (message_id, ended_at);
