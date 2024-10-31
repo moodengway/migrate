@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type postgresConfig struct {
+type config struct {
 	Host     string `envconfig:"HOST" required:"true"`
 	Port     string `envconfig:"PORT" required:"true"`
 	User     string `envconfig:"USER" required:"true"`
@@ -23,20 +23,20 @@ type postgresConfig struct {
 	TimeZone string `envconfig:"TIME_ZONE" required:"true"`
 }
 
-func (c postgresConfig) toDSN() string {
+func (c config) toDSN() string {
 	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=%s", c.Host, c.User, c.Password, c.DBName, c.Port, c.SSLMode, c.TimeZone)
 }
 
-func newPostgresConfig() (postgresConfig, error) {
+func loadConfig() (config, error) {
 	env, ok := os.LookupEnv("ENV")
 	if ok && env != "" {
 		if err := godotenv.Load(); err != nil {
-			return postgresConfig{}, err
+			return config{}, err
 		}
 	}
 
-	var cfg postgresConfig
-	envconfig.MustProcess("POSTGRES", &cfg)
+	var cfg config
+	envconfig.MustProcess("MIGRATE", &cfg)
 	return cfg, nil
 }
 
@@ -58,12 +58,12 @@ func main() {
 		_ = logger.Sync()
 	}()
 
-	config, err := newPostgresConfig()
+	cfg, err := loadConfig()
 	if err != nil {
 		logger.Panic("error loading config", zap.Error(err))
 	}
 
-	db, err := sql.Open("postgres", config.toDSN())
+	db, err := sql.Open("postgres", cfg.toDSN())
 	if err != nil {
 		logger.Panic("error openning sql database", zap.Error(err))
 	}
